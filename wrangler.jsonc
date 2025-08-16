@@ -1,0 +1,57 @@
+{
+    "name": "hono-cf-workers-api",
+    "main": "src/index.ts",
+    "compatibility_date": "2024-01-01",
+    "compatibility_flags": [
+        "nodejs_compat"
+    ],
+    "vars": {
+        "ENVIRONMENT": "development",
+        "SUPABASE_URL": "https://zmlnqmzdjpiyxytnlqji.supabase.co",
+        "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptbG5xbXpkanBpeXh5dG5scWppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4NDc5MzUsImV4cCI6MjA3MDQyMzkzNX0.SiBIGwJ0Khe_a-fpemSBKf2BVhbVH-83aG_trxo806Y"
+    },
+    // "d1_databases": [
+    //     {
+    //         "binding": "DB",
+    //         "database_name": "test-db",
+    //         "database_id": "056df034-0a2e-4a4a-a895-8f910ffa904e"
+    //     }
+    // ],
+    // "kv_namespaces": [
+    //     {
+    //         "binding": "CACHE",
+    //         "id": "your-kv-namespace-id"
+    //     }
+    // ],
+    // You can also add different environments
+    "env": {
+        "staging": {
+            "vars": {
+                "ENVIRONMENT": "staging",
+                "SUPABASE_URL": "your-supabase-url",
+                "SUPABASE_ANON_KEY": "your-supabase-anon-key"
+            },
+            // "d1_databases": [
+            //     {
+            //         "binding": "DB",
+            //         "database_name": "my-database-staging",
+            //         "database_id": "your-staging-database-id"
+            //     }
+            // ]
+        },
+        "production": {
+            "vars": {
+                "ENVIRONMENT": "production",
+                "SUPABASE_URL": "your-supabase-url",
+                "SUPABASE_ANON_KEY": "your-supabase-anon-key"
+            },
+            // "d1_databases": [
+            //     {
+            //         "binding": "DB",
+            //         "database_name": "my-database-prod",
+            //         "database_id": "your-production-database-id"
+            //     }
+            // ]
+        }
+    }
+}
