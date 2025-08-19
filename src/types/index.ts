@@ -1,7 +1,7 @@
 export interface Env {
-  DB: D1Database;
-  CACHE: KVNamespace;
+  CACHE?: KVNamespace;
   ENVIRONMENT: string;
+  DATABASE_TYPE?: string; // Add this
   SUPABASE_URL: string;
   SUPABASE_ANON_KEY: string;
 }
@@ -13,8 +13,8 @@ export interface Context {
 
 export interface BaseEntity {
   id: string;
-  createdAt: Date;
-  updatedAt: Date;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface ApiResponse<T = any> {

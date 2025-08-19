@@ -6,13 +6,14 @@ import { Env } from "@/types";
 
 export class UserModule {
   static register(env: Env) {
-    // Register dependencies with explicit dependency arrays
-    container.register("UserRepository", UserRepository, []);
-    container.register("UserService", UserService, ["UserRepository"]);
-    container.register("UserController", UserController, ["UserService"]);
+    // Create instances manually with proper env injection
+    const userRepository = new UserRepository(env);
+    const userService = new UserService(userRepository);
+    const userController = new UserController(userService);
 
-    // Set the environment for UserRepository manually
-    const userRepository = container.get<UserRepository>("UserRepository");
-    (userRepository as any).env = env;
+    // Register the instances in the container
+    container.instances.set("UserRepository", userRepository);
+    container.instances.set("UserService", userService);
+    container.instances.set("UserController", userController);
   }
 }

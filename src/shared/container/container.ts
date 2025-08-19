@@ -1,6 +1,6 @@
 class DIContainer {
   private services = new Map<string, any>();
-  private instances = new Map<string, any>();
+  public instances = new Map<string, any>(); // Make this public
 
   register<T>(
     token: string,

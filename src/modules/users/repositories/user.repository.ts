@@ -1,137 +1,103 @@
 import { Injectable } from "@/shared/decorators/injectable";
 import { User } from "../entities/user.entity";
-import { getSupabaseClient } from "@/shared/database/supabase";
+import { createDatabaseConnection } from "@/shared/database/factory";
 import { Env } from "@/types";
 import { CreateUserDto, UpdateUserDto } from "../dtos/user.dto";
+import { DatabaseConnection } from "@/shared/database/database";
 
 @Injectable()
 export class UserRepository {
-  public env?: Env;
+  private readonly db: DatabaseConnection;
+  private readonly tableName = "users";
 
-  private getSupabase() {
-    if (!this.env) {
-      throw new Error("Environment not initialized");
-    }
-    return getSupabaseClient(this.env);
+  constructor(env: Env) {
+    this.db = createDatabaseConnection(env);
   }
 
   async findAll(
     page: number = 1,
     limit: number = 10
   ): Promise<{ users: User[]; total: number }> {
-    const supabase = this.getSupabase();
-
     // Get total count
-    const { count } = await supabase
-      .from("users")
-      .select("*", { count: "exact", head: true });
+    const countResult = await this.db.queryOne<{ count: number }>(
+      `SELECT COUNT(*) as count FROM ${this.tableName}`
+    );
+    const total = Number(countResult?.count) || 0;
 
     // Get paginated data
-    const { data, error } = await supabase
-      .from("users")
-      .select("*")
-      .range((page - 1) * limit, page * limit - 1)
-      .order("created_at", { ascending: false });
+    const offset = (page - 1) * limit;
+    const users = await this.db.query<User>(
+      `SELECT * FROM ${this.tableName} ORDER BY created_at DESC LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    );
 
-    if (error) {
-      throw new Error(`Failed to fetch users: ${error.message}`);
-    }
-
-    return {
-      users: data || [],
-      total: count || 0,
-    };
+    return { users, total };
   }
 
   async findById(id: string): Promise<User | null> {
-    const supabase = this.getSupabase();
-
-    const { data, error } = await supabase
-      .from("users")
-      .select("*")
-      .eq("id", id)
-      .single();
-
-    if (error) {
-      if (error.code === "PGRST116") {
-        return null; // Not found
-      }
-      throw new Error(`Failed to fetch user: ${error.message}`);
-    }
-
-    return data;
-  }
-
-  async findByEmail(email: string): Promise<User | null> {
-    const supabase = this.getSupabase();
-
-    const { data, error } = await supabase
-      .from("users")
-      .select("*")
-      .eq("email", email)
-      .single();
-
-    if (error) {
-      if (error.code === "PGRST116") {
-        return null; // Not found
-      }
-      throw new Error(`Failed to fetch user: ${error.message}`);
-    }
-
-    return data;
+    return await this.db.queryOne<User>(
+      `SELECT * FROM ${this.tableName} WHERE id = $1`,
+      [id]
+    );
   }
 
   async create(userData: CreateUserDto): Promise<User> {
-    const supabase = this.getSupabase();
+    const user = await this.db.queryOne<User>(
+      `INSERT INTO ${this.tableName} (name, email, age, created_at, updated_at) 
+       VALUES ($1, $2, $3, NOW(), NOW()) 
+       RETURNING *`,
+      [userData.name, userData.email, userData.age]
+    );
 
-    const { data, error } = await supabase
-      .from("users")
-      .insert([userData])
-      .select()
-      .single();
-
-    if (error) {
-      if (error.code === "23505") {
-        throw new Error("Email already exists");
-      }
-      throw new Error(`Failed to create user: ${error.message}`);
+    if (!user) {
+      throw new Error("Failed to create user");
     }
 
-    return data;
+    return user;
   }
 
   async update(id: string, userData: UpdateUserDto): Promise<User | null> {
-    const supabase = this.getSupabase();
+    // Build dynamic update query
+    const fields: string[] = [];
+    const values: any[] = [];
+    let paramCount = 1;
 
-    const { data, error } = await supabase
-      .from("users")
-      .update(userData)
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (error) {
-      if (error.code === "PGRST116") {
-        return null; // Not found
-      }
-      if (error.code === "23505") {
-        throw new Error("Email already exists");
-      }
-      throw new Error(`Failed to update user: ${error.message}`);
+    if (userData.name !== undefined) {
+      fields.push(`name = $${paramCount++}`);
+      values.push(userData.name);
+    }
+    if (userData.email !== undefined) {
+      fields.push(`email = $${paramCount++}`);
+      values.push(userData.email);
+    }
+    if (userData.age !== undefined) {
+      fields.push(`age = $${paramCount++}`);
+      values.push(userData.age);
     }
 
-    return data;
+    if (fields.length === 0) {
+      return this.findById(id);
+    }
+
+    fields.push(`updated_at = NOW()`);
+    values.push(id);
+
+    const query = `
+      UPDATE ${this.tableName} 
+      SET ${fields.join(", ")} 
+      WHERE id = $${paramCount} 
+      RETURNING *
+    `;
+
+    return await this.db.queryOne<User>(query, values);
   }
 
   async delete(id: string): Promise<boolean> {
-    const supabase = this.getSupabase();
+    const result = await this.db.execute(
+      `DELETE FROM ${this.tableName} WHERE id = $1`,
+      [id]
+    );
 
-    const { error } = await supabase.from("users").delete().eq("id", id);
-
-    if (error) {
-      throw new Error(`Failed to delete user: ${error.message}`);
-    }
-
-    return true;
+    return result.rowCount > 0;
   }
 }
