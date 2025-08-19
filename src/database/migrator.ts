@@ -84,3 +84,30 @@ export class DatabaseMigrator {
     }
   }
 }
+
+//! For Supabase Migration Need To Run These Commented Query In Supabase SQL Editor
+// -- Create the exec_sql function that allows running raw SQL
+// CREATE OR REPLACE FUNCTION exec_sql(sql text)
+// RETURNS void AS $$
+// BEGIN
+//   EXECUTE sql;
+// END;
+// $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+// -- Create a function specifically for migrations that can return data
+// CREATE OR REPLACE FUNCTION exec_migration_sql(sql text)
+// RETURNS TABLE(result jsonb) AS $$
+// BEGIN
+//   -- For CREATE/ALTER/INSERT/UPDATE/DELETE statements
+//   IF sql ILIKE 'CREATE%' OR sql ILIKE 'ALTER%' OR sql ILIKE 'INSERT%'
+//      OR sql ILIKE 'UPDATE%' OR sql ILIKE 'DELETE%' OR sql ILIKE 'DROP%' THEN
+//     EXECUTE sql;
+//     RETURN QUERY SELECT '{"success": true}'::jsonb;
+
+//   -- For SELECT statements, we need to handle differently
+//   ELSE
+//     RETURN QUERY EXECUTE sql;
+//   END IF;
+// END;
+// $$ LANGUAGE plpgsql SECURITY DEFINER;
+//! For Supabase Migration Need To Run These Commented Query In Supabase SQL Editor

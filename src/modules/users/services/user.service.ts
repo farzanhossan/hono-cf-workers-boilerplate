@@ -1,48 +1,93 @@
-import { Injectable } from "@/shared/decorators/injectable";
+// src/modules/users/services/user.service.ts
+import { Context } from "hono";
 import { UserRepository } from "../repositories/user.repository";
-import { User } from "../entities/user.entity";
+import { ResponseHelper } from "@/shared/utils/response";
 import { CreateUserDto, UpdateUserDto } from "../dtos/user.dto";
 
-@Injectable()
 export class UserService {
   constructor(private userRepository: UserRepository) {}
 
-  async getAllUsers(page: number, limit: number) {
-    return await this.userRepository.findAll(page, limit);
-  }
-
-  async getUserById(id: string): Promise<User | null> {
-    return await this.userRepository.findById(id);
-  }
-
-  async createUser(data: CreateUserDto): Promise<User> {
-    // Check if email already exists
-    const existingUser = await this.userRepository.findByEmail(data.email);
-    if (existingUser) {
-      throw new Error("Email already exists");
+  async getUsers(c: Context) {
+    try {
+      const { page, limit } = c.req.valid("query");
+      const { users, total } = await this.userRepository.findAll(page, limit);
+      return ResponseHelper.paginated(c, users, page, limit, total);
+    } catch (error) {
+      return ResponseHelper.error(c, "Failed to fetch users", 500);
     }
-
-    return await this.userRepository.create(data);
   }
 
-  async updateUser(id: string, data: UpdateUserDto): Promise<User | null> {
-    // If email is being updated, check for conflicts
-    if (data.email) {
-      const existingUser = await this.userRepository.findByEmail(data.email);
-      if (existingUser && existingUser.id !== id) {
-        throw new Error("Email already exists");
+  async getUserById(c: Context) {
+    try {
+      const { id } = c.req.valid("param");
+      const user = await this.userRepository.findById(id);
+
+      if (!user) {
+        return ResponseHelper.error(c, "User not found", 404);
       }
-    }
 
-    return await this.userRepository.update(id, data);
+      return ResponseHelper.success(c, user);
+    } catch (error) {
+      return ResponseHelper.error(c, "Failed to fetch user", 500);
+    }
   }
 
-  async deleteUser(id: string): Promise<boolean> {
-    const user = await this.userRepository.findById(id);
-    if (!user) {
-      return false;
-    }
+  async createUser(c: Context) {
+    try {
+      const data: CreateUserDto = c.req.valid("json");
 
-    return await this.userRepository.delete(id);
+      // Business logic - check for existing email
+      const existingUser = await this.userRepository.findByEmail(data.email);
+      if (existingUser) {
+        return ResponseHelper.error(c, "Email already exists", 400);
+      }
+
+      const user = await this.userRepository.create(data);
+      return ResponseHelper.success(c, user, "User created successfully", 201);
+    } catch (error) {
+      return ResponseHelper.error(c, "Failed to create user", 500);
+    }
+  }
+
+  async updateUser(c: Context) {
+    try {
+      const { id } = c.req.valid("param");
+      const data: UpdateUserDto = c.req.valid("json");
+
+      // Business logic - check for email conflicts
+      if (data.email) {
+        const existingUser = await this.userRepository.findByEmail(data.email);
+        if (existingUser && existingUser.id !== id) {
+          return ResponseHelper.error(c, "Email already exists", 400);
+        }
+      }
+
+      const user = await this.userRepository.update(id, data);
+
+      if (!user) {
+        return ResponseHelper.error(c, "User not found", 404);
+      }
+
+      return ResponseHelper.success(c, user, "User updated successfully");
+    } catch (error) {
+      return ResponseHelper.error(c, "Failed to update user", 500);
+    }
+  }
+
+  async deleteUser(c: Context) {
+    try {
+      const { id } = c.req.valid("param");
+
+      // Business logic - check if user exists
+      const user = await this.userRepository.findById(id);
+      if (!user) {
+        return ResponseHelper.error(c, "User not found", 404);
+      }
+
+      const success = await this.userRepository.delete(id);
+      return ResponseHelper.success(c, null, "User deleted successfully");
+    } catch (error) {
+      return ResponseHelper.error(c, "Failed to delete user", 500);
+    }
   }
 }

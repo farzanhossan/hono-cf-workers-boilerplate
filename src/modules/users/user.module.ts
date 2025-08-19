@@ -1,7 +1,8 @@
+// src/modules/users/user.module.ts
 import { container } from "@/shared/container/container";
 import { UserRepository } from "./repositories/user.repository";
 import { UserService } from "./services/user.service";
-import { UserController } from "./controllers/user.controller";
+import { createUserController } from "./controllers/user.controller"; // Function, not class
 import { Env } from "@/types";
 
 export class UserModule {
@@ -9,11 +10,14 @@ export class UserModule {
     // Create instances manually with proper env injection
     const userRepository = new UserRepository(env);
     const userService = new UserService(userRepository);
-    const userController = new UserController(userService);
 
     // Register the instances in the container
     container.instances.set("UserRepository", userRepository);
     container.instances.set("UserService", userService);
-    container.instances.set("UserController", userController);
+  }
+
+  static getRoutes() {
+    const userService = container.instances.get("UserService");
+    return createUserController(userService); // Pass service to controller function
   }
 }

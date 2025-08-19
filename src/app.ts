@@ -1,9 +1,9 @@
+// src/app.ts
 import { Hono } from "hono";
 import { corsMiddleware } from "@/shared/middleware/cors";
 import { loggerMiddleware } from "@/shared/middleware/logger";
 import { errorHandler } from "@/shared/middleware/error";
-import { createUserRoutes } from "@/modules/users/routes/user.routes";
-import { UserModule } from "@/modules/users/user.module";
+import { UserModule } from "@/modules/users/user.module"; // Remove createUserRoutes import
 import { Env } from "@/types";
 import { DatabaseMigrator } from "@/database/migrator";
 
@@ -25,7 +25,6 @@ export function createApp(env: Env) {
     const envKey = `${env.SUPABASE_URL}-${env.ENVIRONMENT}`;
 
     app.use("*", async (c, next) => {
-      // Only run migrations once per environment
       if (!migrationsRun.has(envKey)) {
         console.log("🔄 Running migrations...");
 
@@ -71,8 +70,8 @@ export function createApp(env: Env) {
     });
   });
 
-  // API routes
-  app.route("/api/v1/users", createUserRoutes());
+  // API routes - Use UserModule.getRoutes() instead of createUserRoutes()
+  app.route("/api/v1/users", UserModule.getRoutes());
 
   // Manual migration endpoint
   app.post("/migrate", async (c) => {
