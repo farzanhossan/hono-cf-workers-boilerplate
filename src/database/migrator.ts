@@ -45,7 +45,7 @@ export class DatabaseMigrator {
         CREATE TABLE IF NOT EXISTS schema_migrations (
           id VARCHAR(255) PRIMARY KEY,
           name VARCHAR(255) NOT NULL,
-          executed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+          "executedAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
         )
       `);
     } catch (error) {
@@ -56,7 +56,7 @@ export class DatabaseMigrator {
   private async getAppliedMigrations(): Promise<string[]> {
     try {
       const results = await this.db.query<{ id: string }>(
-        "SELECT id FROM schema_migrations ORDER BY executed_at"
+        'SELECT id FROM schema_migrations ORDER BY "executedAt"'
       );
       return results.map((row) => row.id);
     } catch (error) {
@@ -69,7 +69,7 @@ export class DatabaseMigrator {
     console.log(`🔄 Running migration: ${migration.name}`);
 
     try {
-      // Execute migration SQL
+      // Execute migration SQL (remove transaction commands)
       await this.db.execute(migration.up);
 
       // Record migration
@@ -108,6 +108,29 @@ export class DatabaseMigrator {
 //   ELSE
 //     RETURN QUERY EXECUTE sql;
 //   END IF;
+// END;
+// $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+// -- Function for executing SQL commands (already exists)
+// CREATE OR REPLACE FUNCTION exec_sql(sql text)
+// RETURNS void AS $$
+// BEGIN
+//   EXECUTE sql;
+// END;
+// $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+// -- Function for executing SELECT queries that return data
+// CREATE OR REPLACE FUNCTION exec_query(sql text)
+// RETURNS TABLE(result jsonb) AS $$
+// DECLARE
+//   rec record;
+//   result_array jsonb := '[]'::jsonb;
+// BEGIN
+//   FOR rec IN EXECUTE sql LOOP
+//     result_array := result_array || to_jsonb(rec);
+//   END LOOP;
+
+//   RETURN QUERY SELECT jsonb_array_elements(result_array);
 // END;
 // $$ LANGUAGE plpgsql SECURITY DEFINER;
 //! For Supabase Migration Need To Run These Commented Query In Supabase SQL Editor

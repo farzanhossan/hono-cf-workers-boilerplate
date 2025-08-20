@@ -1,3 +1,4 @@
+// src/modules/users/repositories/user.repository.ts
 import { Injectable } from "@/shared/decorators/injectable";
 import { User } from "../entities/user.entity";
 import { createDatabaseConnection } from "@/shared/database/factory";
@@ -27,7 +28,10 @@ export class UserRepository {
     // Get paginated data
     const offset = (page - 1) * limit;
     const users = await this.db.query<User>(
-      `SELECT * FROM ${this.tableName} ORDER BY created_at DESC LIMIT $1 OFFSET $2`,
+      `SELECT id, data, "createdAt", "updatedAt" 
+       FROM ${this.tableName} 
+       ORDER BY "createdAt" DESC 
+       LIMIT $1 OFFSET $2`,
       [limit, offset]
     );
 
@@ -36,17 +40,28 @@ export class UserRepository {
 
   async findById(id: string): Promise<User | null> {
     return await this.db.queryOne<User>(
-      `SELECT * FROM ${this.tableName} WHERE id = $1`,
+      `SELECT id, data, "createdAt", "updatedAt" 
+       FROM ${this.tableName} 
+       WHERE id = $1`,
       [id]
+    );
+  }
+
+  async findByEmail(email: string): Promise<User | null> {
+    return await this.db.queryOne<User>(
+      `SELECT id, data, "createdAt", "updatedAt" 
+       FROM ${this.tableName} 
+       WHERE data->>'email' = $1`,
+      [email]
     );
   }
 
   async create(userData: CreateUserDto): Promise<User> {
     const user = await this.db.queryOne<User>(
-      `INSERT INTO ${this.tableName} (name, email, age, created_at, updated_at) 
-       VALUES ($1, $2, $3, NOW(), NOW()) 
-       RETURNING *`,
-      [userData.name, userData.email, userData.age]
+      `INSERT INTO ${this.tableName} (data, "createdAt", "updatedAt") 
+       VALUES ($1, NOW(), NOW()) 
+       RETURNING id, data, "createdAt", "updatedAt"`,
+      [JSON.stringify(userData)]
     );
 
     if (!user) {
@@ -57,39 +72,25 @@ export class UserRepository {
   }
 
   async update(id: string, userData: UpdateUserDto): Promise<User | null> {
-    // Build dynamic update query
-    const fields: string[] = [];
-    const values: any[] = [];
-    let paramCount = 1;
-
-    if (userData.name !== undefined) {
-      fields.push(`name = $${paramCount++}`);
-      values.push(userData.name);
-    }
-    if (userData.email !== undefined) {
-      fields.push(`email = $${paramCount++}`);
-      values.push(userData.email);
-    }
-    if (userData.age !== undefined) {
-      fields.push(`age = $${paramCount++}`);
-      values.push(userData.age);
+    // Get current user data
+    const currentUser = await this.findById(id);
+    if (!currentUser) {
+      return null;
     }
 
-    if (fields.length === 0) {
-      return this.findById(id);
-    }
+    // Merge current data with updates
+    const updatedData = {
+      ...currentUser.data,
+      ...userData,
+    };
 
-    fields.push(`updated_at = NOW()`);
-    values.push(id);
-
-    const query = `
-      UPDATE ${this.tableName} 
-      SET ${fields.join(", ")} 
-      WHERE id = $${paramCount} 
-      RETURNING *
-    `;
-
-    return await this.db.queryOne<User>(query, values);
+    return await this.db.queryOne<User>(
+      `UPDATE ${this.tableName} 
+       SET data = $1, "updatedAt" = NOW()
+       WHERE id = $2 
+       RETURNING id, data, "createdAt", "updatedAt"`,
+      [JSON.stringify(updatedData), id]
+    );
   }
 
   async delete(id: string): Promise<boolean> {
@@ -99,5 +100,25 @@ export class UserRepository {
     );
 
     return result.rowCount > 0;
+  }
+
+  // JSONB-specific query methods
+  async findByDataField(field: string, value: any): Promise<User[]> {
+    return await this.db.query<User>(
+      `SELECT id, data, "createdAt", "updatedAt" 
+       FROM ${this.tableName} 
+       WHERE data->>$1 = $2`,
+      [field, value]
+    );
+  }
+
+  async searchByName(searchTerm: string): Promise<User[]> {
+    return await this.db.query<User>(
+      `SELECT id, data, "createdAt", "updatedAt" 
+       FROM ${this.tableName} 
+       WHERE data->>'name' ILIKE $1
+       ORDER BY data->>'name'`,
+      [`%${searchTerm}%`]
+    );
   }
 }

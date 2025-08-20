@@ -1,14 +1,10 @@
-// src/app.ts
 import { Hono } from "hono";
 import { corsMiddleware } from "@/shared/middleware/cors";
 import { loggerMiddleware } from "@/shared/middleware/logger";
 import { errorHandler } from "@/shared/middleware/error";
-import { UserModule } from "@/modules/users/user.module"; // Remove createUserRoutes import
+import { UserModule } from "@/modules/users/user.module";
 import { Env } from "@/types";
 import { DatabaseMigrator } from "@/database/migrator";
-
-// Track migrations per environment
-const migrationsRun = new Set<string>();
 
 export function createApp(env: Env) {
   const app = new Hono();
@@ -20,45 +16,7 @@ export function createApp(env: Env) {
   app.use("*", corsMiddleware);
   app.use("*", loggerMiddleware);
 
-  // Run migrations automatically in development
-  if (env.ENVIRONMENT === "development") {
-    const envKey = `${env.SUPABASE_URL}-${env.ENVIRONMENT}`;
-
-    app.use("*", async (c, next) => {
-      if (!migrationsRun.has(envKey)) {
-        console.log("🔄 Running migrations...");
-
-        try {
-          const migrator = new DatabaseMigrator(env);
-          const success = await migrator.runMigrations();
-
-          if (!success) {
-            console.error("❌ Migration failed");
-            return c.json(
-              {
-                success: false,
-                error: "Database migration failed. Check logs.",
-              },
-              500
-            );
-          }
-
-          migrationsRun.add(envKey);
-          console.log("✅ Migrations completed");
-        } catch (error) {
-          console.error("❌ Migration error:", error);
-          return c.json(
-            {
-              success: false,
-              error: "Database migration failed",
-            },
-            500
-          );
-        }
-      }
-      await next();
-    });
-  }
+  // Remove the automatic migration code
 
   // Health check
   app.get("/health", (c) => {
@@ -70,11 +28,11 @@ export function createApp(env: Env) {
     });
   });
 
-  // API routes - Use UserModule.getRoutes() instead of createUserRoutes()
+  // API routes
   app.route("/api/v1/users", UserModule.getRoutes());
 
-  // Manual migration endpoint
-  app.post("/migrate", async (c) => {
+  // Manual migration endpoint (keep this for manual triggers)
+  app.get("/migrate", async (c) => {
     try {
       console.log("🔄 Manual migration triggered");
       const migrator = new DatabaseMigrator(c.env);

@@ -13,8 +13,8 @@ export interface Context {
 
 export interface BaseEntity {
   id: string;
-  created_at: Date;
-  updated_at: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface ApiResponse<T = any> {

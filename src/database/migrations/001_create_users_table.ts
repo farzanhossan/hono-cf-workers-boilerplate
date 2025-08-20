@@ -1,23 +1,24 @@
-// src/database/migrations/001_create_users_table.ts
 export const migration_001_create_users_table = {
   id: "001_create_users_table",
   name: "Create users table",
   up: `
     CREATE TABLE IF NOT EXISTS users (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      name VARCHAR(100) NOT NULL,
-      email VARCHAR(255) UNIQUE NOT NULL,
-      age INTEGER CHECK (age > 0 AND age <= 150),
-      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      data JSONB NOT NULL,
+      "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     );
+
+    CREATE INDEX IF NOT EXISTS idx_users_data ON users USING GIN (data);
+    CREATE INDEX IF NOT EXISTS idx_users_created_at ON users("createdAt" DESC);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_users_data_email_unique ON users ((data->>'email'));
 
     ALTER TABLE users ENABLE ROW LEVEL SECURITY;
     
     CREATE OR REPLACE FUNCTION update_updated_at_column()
     RETURNS TRIGGER AS $$
     BEGIN
-        NEW.updated_at = NOW();
+        NEW."updatedAt" = NOW();
         RETURN NEW;
     END;
     $$ language 'plpgsql';
@@ -30,9 +31,6 @@ export const migration_001_create_users_table = {
 
     DROP POLICY IF EXISTS "Allow all operations" ON users;
     CREATE POLICY "Allow all operations" ON users FOR ALL USING (true);
-
-    CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-    CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at DESC);
   `,
   down: `
     DROP TABLE IF EXISTS users CASCADE;
