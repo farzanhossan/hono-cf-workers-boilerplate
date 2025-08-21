@@ -24,7 +24,7 @@ export function createUserController(userService: UserService) {
     (c) => userService.createUser(c)
   );
 
-  userRoutes.put(
+  userRoutes.patch(
     "/:id",
     authMiddleware,
     zValidator("param", IdParamSchema),

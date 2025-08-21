@@ -32,20 +32,26 @@ export class UserService {
     }
   }
 
-  async createUser(c: Context) {
+  async createUser(ctx: Context) {
     try {
-      const data: CreateUserDto = c.req.valid("json");
+      const data: CreateUserDto = ctx.req.valid("json");
 
       // Business logic - check for existing email
       const existingUser = await this.userRepository.findByEmail(data.email);
+
       if (existingUser) {
-        return ResponseHelper.error(c, "Email already exists", 400);
+        return ResponseHelper.error(ctx, "Email already exists", 400);
       }
 
       const user = await this.userRepository.create(data);
-      return ResponseHelper.success(c, user, "User created successfully", 201);
+      return ResponseHelper.success(
+        ctx,
+        user,
+        "User created successfully",
+        201
+      );
     } catch (error) {
-      return ResponseHelper.error(c, "Failed to create user", 500);
+      return ResponseHelper.error(ctx, "Failed to create user", 500);
     }
   }
 
