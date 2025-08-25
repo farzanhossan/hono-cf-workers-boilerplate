@@ -28,9 +28,9 @@ export class UserRepository {
     // Get paginated data
     const offset = (page - 1) * limit;
     const users = await this.db.query<User>(
-      `SELECT id, data, "createdAt", "updatedAt" 
+      `SELECT id, data, "created_at", "updated_at" 
        FROM ${this.tableName} 
-       ORDER BY "createdAt" DESC 
+       ORDER BY "created_at" DESC 
        LIMIT $1 OFFSET $2`,
       [limit, offset]
     );
@@ -40,7 +40,7 @@ export class UserRepository {
 
   async findById(id: string): Promise<User | null> {
     return await this.db.queryOne<User>(
-      `SELECT id, data, "createdAt", "updatedAt" 
+      `SELECT id, data, "created_at", "updated_at" 
        FROM ${this.tableName} 
        WHERE id = $1`,
       [id]
@@ -49,7 +49,7 @@ export class UserRepository {
 
   async findByEmail(email: string): Promise<User | null> {
     return await this.db.queryOne<User>(
-      `SELECT id, data, "createdAt", "updatedAt" 
+      `SELECT id, data, "created_at", "updated_at" 
        FROM ${this.tableName} 
        WHERE data->>'email' = $1`,
       [email]
@@ -58,9 +58,9 @@ export class UserRepository {
 
   async create(userData: CreateUserDto): Promise<User> {
     const user = await this.db.queryOne<User>(
-      `INSERT INTO ${this.tableName} (data, "createdAt", "updatedAt") 
+      `INSERT INTO ${this.tableName} (data, "created_at", "updated_at") 
        VALUES ($1, NOW(), NOW()) 
-       RETURNING id, data, "createdAt", "updatedAt"`,
+       RETURNING id, data, "created_at", "updated_at"`,
       [JSON.stringify(userData)]
     );
 
@@ -86,9 +86,9 @@ export class UserRepository {
 
     return await this.db.queryOne<User>(
       `UPDATE ${this.tableName} 
-       SET data = $1, "updatedAt" = NOW()
+       SET data = $1, "updated_at" = NOW()
        WHERE id = $2 
-       RETURNING id, data, "createdAt", "updatedAt"`,
+       RETURNING id, data, "created_at", "updated_at"`,
       [JSON.stringify(updatedData), id]
     );
   }
@@ -105,7 +105,7 @@ export class UserRepository {
   // JSONB-specific query methods
   async findByDataField(field: string, value: any): Promise<User[]> {
     return await this.db.query<User>(
-      `SELECT id, data, "createdAt", "updatedAt" 
+      `SELECT id, data, "created_at", "updated_at" 
        FROM ${this.tableName} 
        WHERE data->>$1 = $2`,
       [field, value]
@@ -114,7 +114,7 @@ export class UserRepository {
 
   async searchByName(searchTerm: string): Promise<User[]> {
     return await this.db.query<User>(
-      `SELECT id, data, "createdAt", "updatedAt" 
+      `SELECT id, data, "created_at", "updated_at" 
        FROM ${this.tableName} 
        WHERE data->>'name' ILIKE $1
        ORDER BY data->>'name'`,

@@ -1,5 +1,6 @@
 import { Context } from "hono";
 import { ApiResponse, PaginatedResponse } from "@/types";
+import { CaseTransformer } from "./case-transformer";
 
 export class ResponseHelper {
   static success<T>(c: Context, data: T, message?: string, status = 200) {
@@ -8,7 +9,7 @@ export class ResponseHelper {
       data,
       message,
     };
-    return c.json(response, status);
+    return c.json(CaseTransformer.snakeToCamel(response), status);
   }
 
   static error(c: Context, error: string, status = 400) {
@@ -36,6 +37,6 @@ export class ResponseHelper {
         totalPages: Math.ceil(total / limit),
       },
     };
-    return c.json(response);
+    return c.json(CaseTransformer.snakeToCamel(response), 200);
   }
 }

@@ -198,7 +198,7 @@ export class SupabaseAdapter implements DatabaseConnection {
       throw error;
     }
 
-    console.log("✅ Select result:", data);
+    // console.log("✅ Select result:", data);
     return data || [];
   }
 

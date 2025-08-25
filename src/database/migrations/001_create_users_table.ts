@@ -5,12 +5,12 @@ export const migration_001_create_users_table = {
     CREATE TABLE IF NOT EXISTS users (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       data JSONB NOT NULL,
-      "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-      "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      "created_at" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      "updated_at" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     );
 
     CREATE INDEX IF NOT EXISTS idx_users_data ON users USING GIN (data);
-    CREATE INDEX IF NOT EXISTS idx_users_created_at ON users("createdAt" DESC);
+    CREATE INDEX IF NOT EXISTS idx_users_created_at ON users("created_at" DESC);
     CREATE UNIQUE INDEX IF NOT EXISTS idx_users_data_email_unique ON users ((data->>'email'));
 
     ALTER TABLE users ENABLE ROW LEVEL SECURITY;
@@ -18,7 +18,7 @@ export const migration_001_create_users_table = {
     CREATE OR REPLACE FUNCTION update_updated_at_column()
     RETURNS TRIGGER AS $$
     BEGIN
-        NEW."updatedAt" = NOW();
+        NEW."updated_at" = NOW();
         RETURN NEW;
     END;
     $$ language 'plpgsql';
