@@ -2,7 +2,7 @@
 import { container } from "@/shared/container/container";
 import { UserRepository } from "./repositories/user.repository";
 import { UserService } from "./services/user.service";
-import { createUserController } from "./controllers/user.controller"; // Function, not class
+import { UserController } from "./controllers/user.controller"; // Function, not class
 import { Env } from "@/types";
 
 export class UserModule {
@@ -18,6 +18,6 @@ export class UserModule {
 
   static getRoutes() {
     const userService = container.instances.get("UserService");
-    return createUserController(userService); // Pass service to controller function
+    return UserController(userService); // Pass service to controller function
   }
 }

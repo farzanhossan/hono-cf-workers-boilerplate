@@ -1,12 +1,12 @@
 // src/modules/users/controllers/user.controller.ts
-import { Hono } from "hono";
-import { zValidator } from "@hono/zod-validator";
-import { UserService } from "../services/user.service";
-import { CreateUserSchema, UpdateUserSchema } from "../dtos/user.dto";
-import { PaginationSchema, IdParamSchema } from "@/shared/utils/validation";
 import { authMiddleware } from "@/shared/middleware/auth";
+import { IdParamSchema, PaginationSchema } from "@/shared/utils/validation";
+import { zValidator } from "@hono/zod-validator";
+import { Hono } from "hono";
+import { CreateUserSchema, UpdateUserSchema } from "../dtos/user.dto";
+import { UserService } from "../services/user.service";
 
-export function createUserController(userService: UserService) {
+export function UserController(userService: UserService) {
   const userRoutes = new Hono();
 
   userRoutes.get("/", zValidator("query", PaginationSchema), (c) =>

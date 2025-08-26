@@ -3,6 +3,7 @@ import { ResponseHelper } from "@/shared/utils/response";
 import { Context } from "hono";
 import { CreateUserDto, UpdateUserDto } from "../dtos/user.dto";
 import { UserRepository } from "../repositories/user.repository";
+import { CaseTransformer } from "@/shared/utils/case-transformer";
 
 export class UserService {
   constructor(private userRepository: UserRepository) {}
@@ -43,7 +44,9 @@ export class UserService {
         return ResponseHelper.error(ctx, "Email already exists", 400);
       }
 
-      const user = await this.userRepository.create(data);
+      const user = await this.userRepository.create(
+        CaseTransformer.camelToSnake(data)
+      );
       return ResponseHelper.success(
         ctx,
         user,
@@ -68,7 +71,10 @@ export class UserService {
         }
       }
 
-      const user = await this.userRepository.update(id, data);
+      const user = await this.userRepository.update(
+        id,
+        CaseTransformer.camelToSnake(data)
+      );
 
       if (!user) {
         return ResponseHelper.error(c, "User not found", 404);

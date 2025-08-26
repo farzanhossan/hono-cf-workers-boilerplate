@@ -5,12 +5,14 @@ import { errorHandler } from "@/shared/middleware/error";
 import { UserModule } from "@/modules/users/user.module";
 import { Env } from "@/types";
 import { DatabaseMigrator } from "@/database/migrator";
+import { PostModule } from "./modules/posts/post.module";
 
 export function createApp(env: Env) {
   const app = new Hono();
 
   // Register modules
   UserModule.register(env);
+  PostModule.register(env);
 
   // Global middleware
   app.use("*", corsMiddleware);
@@ -30,6 +32,7 @@ export function createApp(env: Env) {
 
   // API routes
   app.route("/api/v1/users", UserModule.getRoutes());
+  app.route("/api/v1/posts", PostModule.getRoutes());
 
   // Manual migration endpoint (keep this for manual triggers)
   app.get("/migrate", async (c) => {
