@@ -2,8 +2,9 @@ export interface Env {
   CACHE?: KVNamespace;
   ENVIRONMENT: string;
   DATABASE_TYPE?: string; // Add this
-  SUPABASE_URL: string;
-  SUPABASE_ANON_KEY: string;
+  SUPABASE_URL?: string;
+  SUPABASE_ANON_KEY?: string;
+  HYPERDRIVE?: Hyperdrive;
 }
 
 export interface Context {

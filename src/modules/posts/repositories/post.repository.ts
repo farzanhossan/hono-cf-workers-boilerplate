@@ -28,9 +28,9 @@ export class PostRepository {
     // Get paginated data
     const offset = (page - 1) * limit;
     const posts = await this.db.query<Post>(
-      `SELECT id, data, "created_at", "updated_at"
+      `SELECT id, data, created_at, updated_at
        FROM ${this.tableName}
-       ORDER BY "created_at" DESC
+       ORDER BY created_at DESC
        LIMIT $1 OFFSET $2`,
       [limit, offset]
     );
@@ -38,9 +38,36 @@ export class PostRepository {
     return { posts, total };
   }
 
+  // async findAll(
+  //   page: number = 1,
+  //   limit: number = 10
+  // ): Promise<{ posts: Post[]; total: number }> {
+  //   // Get total count
+  //   const countResult = await this.db.queryOne<{ count: number }>(
+  //     `SELECT COUNT(*) as count FROM ${this.tableName}`
+  //   );
+  //   const total = Number(countResult?.count) || 0;
+
+  //   // Use raw SQL via exec_sql for JOIN query
+  //   const offset = (page - 1) * limit;
+  //   const posts = await this.db.query<Post>(
+  //     `SELECT
+  //      posts.id,
+  //      posts.data || jsonb_build_object('user', users.data) as data,
+  //      posts.created_at,
+  //      posts.updated_at
+  //    FROM posts
+  //    LEFT JOIN users ON posts.user_id = users.id
+  //    ORDER BY posts.created_at DESC
+  //    LIMIT ${limit} OFFSET ${offset}`
+  //   );
+
+  //   return { posts, total };
+  // }
+
   async findById(id: string): Promise<Post | null> {
     return await this.db.queryOne<Post>(
-      `SELECT id, data, "created_at", "updated_at" 
+      `SELECT id, data, created_at, updated_at 
        FROM ${this.tableName} 
        WHERE id = $1`,
       [id]
@@ -49,9 +76,9 @@ export class PostRepository {
 
   async create(postData: CreatePostDto): Promise<Post> {
     const post = await this.db.queryOne<Post>(
-      `INSERT INTO ${this.tableName} (data, "created_at", "updated_at") 
+      `INSERT INTO ${this.tableName} (data, created_at, updated_at) 
        VALUES ($1, NOW(), NOW()) 
-       RETURNING id, data, "created_at", "updated_at"`,
+       RETURNING id, data, created_at, updated_at`,
       [JSON.stringify(postData)]
     );
 
@@ -77,9 +104,9 @@ export class PostRepository {
 
     return await this.db.queryOne<Post>(
       `UPDATE ${this.tableName} 
-       SET data = $1, "updated_at" = NOW()
+       SET data = $1, updated_at = NOW()
        WHERE id = $2 
-       RETURNING id, data, "created_at", "updated_at"`,
+       RETURNING id, data, created_at, updated_at`,
       [JSON.stringify(updatedData), id]
     );
   }
@@ -96,7 +123,7 @@ export class PostRepository {
   // JSONB-specific query methods
   async findByDataField(field: string, value: any): Promise<Post[]> {
     return await this.db.query<Post>(
-      `SELECT id, data, "created_at", "updated_at" 
+      `SELECT id, data, created_at, updated_at 
        FROM ${this.tableName} 
        WHERE data->>$1 = $2`,
       [field, value]
@@ -105,7 +132,7 @@ export class PostRepository {
 
   async searchByName(searchTerm: string): Promise<Post[]> {
     return await this.db.query<Post>(
-      `SELECT id, data, "created_at", "updated_at" 
+      `SELECT id, data, created_at, updated_at 
        FROM ${this.tableName} 
        WHERE data->>'name' ILIKE $1
        ORDER BY data->>'name'`,

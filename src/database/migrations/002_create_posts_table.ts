@@ -6,13 +6,13 @@ export const migration_002_create_posts_table = {
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       data JSONB NOT NULL DEFAULT '{}'::jsonb,
       user_id UUID GENERATED ALWAYS AS ((data->>'user_id')::UUID) STORED,
-      "created_at" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-      "updated_at" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     );
 
     CREATE INDEX IF NOT EXISTS idx_posts_data ON posts USING GIN (data);
-    CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts("created_at" DESC);
-    CREATE INDEX IF NOT EXISTS idx_posts_updated_at ON posts("updated_at" DESC);
+    CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_posts_updated_at ON posts(updated_at DESC);
     CREATE INDEX IF NOT EXISTS idx_posts_user_id ON posts(user_id);
     CREATE INDEX IF NOT EXISTS idx_posts_data_is_help_post ON posts ((data->>'is_help_post'));
 

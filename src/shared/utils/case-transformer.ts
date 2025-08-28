@@ -30,7 +30,6 @@ export class CaseTransformer {
    * @returns {any} - The transformed object with camelCase keys
    */
   static transformSnakeToCamel(obj) {
-    console.log("🚀 ~ CaseTransformer ~ transformSnakeToCamel ~ obj:", obj);
     if (obj === null || typeof obj !== "object") {
       return obj;
     }
