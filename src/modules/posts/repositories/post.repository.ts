@@ -79,7 +79,7 @@ export class PostRepository {
       `INSERT INTO ${this.tableName} (data, created_at, updated_at) 
        VALUES ($1, NOW(), NOW()) 
        RETURNING id, data, created_at, updated_at`,
-      [JSON.stringify(postData)]
+      [postData]
     );
 
     if (!post) {
@@ -107,7 +107,7 @@ export class PostRepository {
        SET data = $1, updated_at = NOW()
        WHERE id = $2 
        RETURNING id, data, created_at, updated_at`,
-      [JSON.stringify(updatedData), id]
+      [updatedData, id]
     );
   }
 

@@ -28,7 +28,7 @@ export class UserRepository {
     // Get paginated data
     const offset = (page - 1) * limit;
     const users = await this.db.query<User>(
-      `SELECT id, data, created_at, updated_at 
+      `SELECT * 
        FROM ${this.tableName} 
        ORDER BY created_at DESC 
        LIMIT $1 OFFSET $2`,
@@ -40,7 +40,7 @@ export class UserRepository {
 
   async findById(id: string): Promise<User | null> {
     return await this.db.queryOne<User>(
-      `SELECT id, data, created_at, updated_at 
+      `SELECT * 
        FROM ${this.tableName} 
        WHERE id = $1`,
       [id]
@@ -49,7 +49,7 @@ export class UserRepository {
 
   async findByEmail(email: string): Promise<User | null> {
     return await this.db.queryOne<User>(
-      `SELECT id, data, created_at, updated_at 
+      `SELECT *
        FROM ${this.tableName} 
        WHERE data->>'email' = $1`,
       [email]
@@ -58,11 +58,12 @@ export class UserRepository {
 
   async create(userData: CreateUserDto): Promise<User> {
     const user = await this.db.queryOne<User>(
-      `INSERT INTO ${this.tableName} (data, created_at, updated_at) 
-       VALUES ($1, NOW(), NOW()) 
-       RETURNING id, data, created_at, updated_at`,
-      [JSON.stringify(userData)]
+      `INSERT INTO ${this.tableName} (data) 
+       VALUES ($1) 
+       RETURNING *`,
+      [userData]
     );
+    console.log("🚀 ~ UserRepository ~ create ~ user:", user);
 
     if (!user) {
       throw new Error("Failed to create user");
@@ -86,10 +87,10 @@ export class UserRepository {
 
     return await this.db.queryOne<User>(
       `UPDATE ${this.tableName} 
-       SET data = $1, updated_at = NOW()
+       SET data = $1
        WHERE id = $2 
-       RETURNING id, data, created_at, updated_at`,
-      [JSON.stringify(updatedData), id]
+       RETURNING *`,
+      [updatedData, id]
     );
   }
 
@@ -105,7 +106,7 @@ export class UserRepository {
   // JSONB-specific query methods
   async findByDataField(field: string, value: any): Promise<User[]> {
     return await this.db.query<User>(
-      `SELECT id, data, created_at, updated_at 
+      `SELECT *
        FROM ${this.tableName} 
        WHERE data->>$1 = $2`,
       [field, value]
@@ -114,7 +115,7 @@ export class UserRepository {
 
   async searchByName(searchTerm: string): Promise<User[]> {
     return await this.db.query<User>(
-      `SELECT id, data, created_at, updated_at 
+      `SELECT *
        FROM ${this.tableName} 
        WHERE data->>'name' ILIKE $1
        ORDER BY data->>'name'`,

@@ -44,6 +44,15 @@ export class UserService {
         return ResponseHelper.error(ctx, "Email already exists", 400);
       }
 
+      console.log("======================");
+      console.log("======================");
+      console.log("======================");
+      console.log("======================");
+      console.log(
+        "🚀 ~ UserService ~ createUser ~ data:",
+        CaseTransformer.camelToSnake(data)
+      );
+
       const user = await this.userRepository.create(
         CaseTransformer.camelToSnake(data)
       );
