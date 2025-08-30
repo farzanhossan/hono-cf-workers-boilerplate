@@ -12,12 +12,6 @@ export interface Context {
   executionCtx: ExecutionContext;
 }
 
-export interface BaseEntity {
-  id: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;

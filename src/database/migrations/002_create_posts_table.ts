@@ -6,8 +6,8 @@ export const migration_002_create_posts_table = {
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       data JSONB NOT NULL DEFAULT '{}'::jsonb,
       user_id UUID GENERATED ALWAYS AS ((data->>'user_id')::UUID) STORED,
-      created_at TIMESTAMP WITH TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
-      updated_at TIMESTAMP WITH TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC')
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     );
 
     CREATE INDEX IF NOT EXISTS idx_posts_data ON posts USING GIN (data);
@@ -38,22 +38,10 @@ export const migration_002_create_posts_table = {
     ALTER TABLE posts ADD CONSTRAINT posts_data_check 
     CHECK (
       jsonb_typeof(data) = 'object' AND
-      CASE 
-        WHEN data ? 'user_id' THEN jsonb_typeof(data->'user_id') = 'string'
-        ELSE true 
-      END AND
-      CASE 
-        WHEN data ? 'description' THEN jsonb_typeof(data->'description') = 'string'
-        ELSE true 
-      END AND
-      CASE 
-        WHEN data ? 'is_help_post' THEN jsonb_typeof(data->'is_help_post') = 'boolean'
-        ELSE true 
-      END AND
-      CASE 
-        WHEN data ? 'galleries' THEN jsonb_typeof(data->'galleries') = 'object'
-        ELSE true 
-      END
+      (data ? 'user_id' IS NULL OR jsonb_typeof(data->'user_id') = 'string') AND
+      (data ? 'description' IS NULL OR jsonb_typeof(data->'description') = 'string') AND
+      (data ? 'is_help_post' IS NULL OR jsonb_typeof(data->'is_help_post') = 'boolean') AND
+      (data ? 'galleries' IS NULL OR jsonb_typeof(data->'galleries') = 'object')
     );
 
     DROP POLICY IF EXISTS "Allow all operations" ON posts;

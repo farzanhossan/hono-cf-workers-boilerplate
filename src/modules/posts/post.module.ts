@@ -1,4 +1,3 @@
-// src/modules/posts/post.module.ts
 import { container } from "@/shared/container/container";
 import { Env } from "@/types";
 import { PostController } from "./controllers/post.controller"; // Function, not class
@@ -18,6 +17,6 @@ export class PostModule {
 
   static getRoutes() {
     const postService = container.instances.get("PostService");
-    return PostController(postService);
+    return PostController(postService); // Pass service to controller function
   }
 }

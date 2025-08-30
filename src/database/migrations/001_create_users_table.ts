@@ -5,8 +5,8 @@ export const migration_001_create_users_table = {
     CREATE TABLE IF NOT EXISTS users (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       data JSONB NOT NULL,
-      created_at TIMESTAMP WITH TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
-      updated_at TIMESTAMP WITH TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC')
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     );
 
     CREATE INDEX IF NOT EXISTS idx_users_data ON users USING GIN (data);
@@ -18,7 +18,7 @@ export const migration_001_create_users_table = {
     CREATE OR REPLACE FUNCTION update_updated_at_column()
     RETURNS TRIGGER AS $$
     BEGIN
-        NEW.updated_at = NOW() AT TIME ZONE 'UTC';
+        NEW.updated_at = NOW();
         RETURN NEW;
     END;
     $$ language 'plpgsql';

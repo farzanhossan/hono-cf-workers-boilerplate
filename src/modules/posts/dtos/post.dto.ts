@@ -1,16 +1,9 @@
 import { z } from "zod";
 
-const GalleryItemSchema = z.object({
-  type: z.enum(["video", "image"]),
-  link: z.string().url(),
-  key: z.string().min(1),
-});
-
 export const CreatePostSchema = z.object({
-  isHelpPost: z.boolean().optional(),
-  galleries: GalleryItemSchema.optional(),
-  description: z.string().min(1).max(5000).optional(),
-  userId: z.string().uuid(),
+  name: z.string().min(2).max(100),
+  email: z.string().email(),
+  avatar: z.string().url().optional(),
 });
 
 export const UpdatePostSchema = CreatePostSchema.partial();

@@ -20,10 +20,7 @@ export class HyperdriveAdapter implements DatabaseConnection {
       // Use Hyperdrive in production
       this.hyperdrive = env.HYPERDRIVE;
       this.connectionString = this.hyperdrive.connectionString;
-      console.log(
-        "🚀 ~ HyperdriveAdapter ~ constructor ~ this.connectionString:",
-        this.connectionString
-      );
+
       console.log("Using Hyperdrive connection for production");
     }
   }
@@ -31,7 +28,6 @@ export class HyperdriveAdapter implements DatabaseConnection {
   async query<T = any>(sql: string, params: any[] = []): Promise<T[]> {
     console.log("Executing query:", sql);
     console.log("With params:", params);
-    console.log("Using connection string:", this.connectionString);
 
     const client = postgres(this.connectionString, {
       prepare: false,

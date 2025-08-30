@@ -4,7 +4,7 @@ import { createDatabaseConnection } from "@/shared/database/factory";
 import { Injectable } from "@/shared/decorators/injectable";
 import { Env } from "@/types";
 import { CreatePostDto, UpdatePostDto } from "../dtos/post.dto";
-import { Post } from "../entities/post.entity";
+import { IPost, Post } from "../entities/post.entity";
 
 @Injectable()
 export class PostRepository {
@@ -16,9 +16,11 @@ export class PostRepository {
   }
 
   async findAll(
-    page: number = 1,
-    limit: number = 10
-  ): Promise<{ posts: Post[]; total: number }> {
+    options: { page?: number; limit?: number },
+    transformCollection: (data: Post[]) => IPost[]
+  ): Promise<{ posts: IPost[]; total: number }> {
+    const { page = 1, limit = 10 } = options;
+
     // Get total count
     const countResult = await this.db.queryOne<{ count: number }>(
       `SELECT COUNT(*) as count FROM ${this.tableName}`
@@ -28,70 +30,65 @@ export class PostRepository {
     // Get paginated data
     const offset = (page - 1) * limit;
     const posts = await this.db.query<Post>(
-      `SELECT id, data, created_at, updated_at
-       FROM ${this.tableName}
-       ORDER BY created_at DESC
+      `SELECT * 
+       FROM ${this.tableName} 
+       ORDER BY created_at DESC 
        LIMIT $1 OFFSET $2`,
       [limit, offset]
     );
 
-    return { posts, total };
+    return { posts: transformCollection(posts), total };
   }
 
-  // async findAll(
-  //   page: number = 1,
-  //   limit: number = 10
-  // ): Promise<{ posts: Post[]; total: number }> {
-  //   // Get total count
-  //   const countResult = await this.db.queryOne<{ count: number }>(
-  //     `SELECT COUNT(*) as count FROM ${this.tableName}`
-  //   );
-  //   const total = Number(countResult?.count) || 0;
-
-  //   // Use raw SQL via exec_sql for JOIN query
-  //   const offset = (page - 1) * limit;
-  //   const posts = await this.db.query<Post>(
-  //     `SELECT
-  //      posts.id,
-  //      posts.data || jsonb_build_object('user', users.data) as data,
-  //      posts.created_at,
-  //      posts.updated_at
-  //    FROM posts
-  //    LEFT JOIN users ON posts.user_id = users.id
-  //    ORDER BY posts.created_at DESC
-  //    LIMIT ${limit} OFFSET ${offset}`
-  //   );
-
-  //   return { posts, total };
-  // }
-
-  async findById(id: string): Promise<Post | null> {
-    return await this.db.queryOne<Post>(
-      `SELECT id, data, created_at, updated_at 
+  async findById(
+    id: string,
+    transformer: (data: Post) => IPost
+  ): Promise<IPost | null> {
+    const post = await this.db.queryOne<Post>(
+      `SELECT * 
        FROM ${this.tableName} 
        WHERE id = $1`,
       [id]
     );
+
+    return post ? transformer(post) : null;
   }
 
-  async create(postData: CreatePostDto): Promise<Post> {
+  async findByEmail(email: string): Promise<Post | null> {
+    return await this.db.queryOne<Post>(
+      `SELECT *
+       FROM ${this.tableName} 
+       WHERE data->>'email' = $1`,
+      [email]
+    );
+  }
+
+  async create(
+    postData: CreatePostDto,
+    transformer: (data: Post) => IPost
+  ): Promise<IPost> {
     const post = await this.db.queryOne<Post>(
-      `INSERT INTO ${this.tableName} (data, created_at, updated_at) 
-       VALUES ($1, NOW(), NOW()) 
-       RETURNING id, data, created_at, updated_at`,
+      `INSERT INTO ${this.tableName} (data) 
+       VALUES ($1) 
+       RETURNING *`,
       [postData]
     );
+    console.log("🚀 ~ PostRepository ~ create ~ post:", post);
 
     if (!post) {
       throw new Error("Failed to create post");
     }
 
-    return post;
+    return transformer(post);
   }
 
-  async update(id: string, postData: UpdatePostDto): Promise<Post | null> {
+  async update(
+    id: string,
+    postData: UpdatePostDto,
+    transform: (data: Post) => IPost
+  ): Promise<IPost | null> {
     // Get current post data
-    const currentPost = await this.findById(id);
+    const currentPost = await this.findById(id, transform);
     if (!currentPost) {
       return null;
     }
@@ -102,13 +99,15 @@ export class PostRepository {
       ...postData,
     };
 
-    return await this.db.queryOne<Post>(
+    const updatedPost: any = await this.db.queryOne<Post>(
       `UPDATE ${this.tableName} 
-       SET data = $1, updated_at = NOW()
+       SET data = $1
        WHERE id = $2 
-       RETURNING id, data, created_at, updated_at`,
+       RETURNING *`,
       [updatedData, id]
     );
+
+    return updatedPost ? transform(updatedPost) : null;
   }
 
   async delete(id: string): Promise<boolean> {
@@ -123,7 +122,7 @@ export class PostRepository {
   // JSONB-specific query methods
   async findByDataField(field: string, value: any): Promise<Post[]> {
     return await this.db.query<Post>(
-      `SELECT id, data, created_at, updated_at 
+      `SELECT *
        FROM ${this.tableName} 
        WHERE data->>$1 = $2`,
       [field, value]
@@ -132,7 +131,7 @@ export class PostRepository {
 
   async searchByName(searchTerm: string): Promise<Post[]> {
     return await this.db.query<Post>(
-      `SELECT id, data, created_at, updated_at 
+      `SELECT *
        FROM ${this.tableName} 
        WHERE data->>'name' ILIKE $1
        ORDER BY data->>'name'`,

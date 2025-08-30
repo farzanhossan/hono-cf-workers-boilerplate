@@ -1,4 +1,4 @@
-import { BaseEntity } from "@/types";
+import { BaseEntity } from "@/base/base.entity";
 
 export interface Post extends BaseEntity {
   data: {
@@ -11,4 +11,20 @@ export interface Post extends BaseEntity {
     description?: string;
     user_id?: string;
   };
+}
+
+export interface IPost {
+  id?: string;
+  data: {
+    isHelpPost?: boolean;
+    galleries?: {
+      type: "video" | "image";
+      link: string;
+      key: string;
+    };
+    description?: string;
+    userId?: string;
+  };
+  createdAt?: Date;
+  updatedAt?: Date;
 }

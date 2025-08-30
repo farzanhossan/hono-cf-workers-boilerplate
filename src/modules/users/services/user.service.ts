@@ -4,6 +4,8 @@ import { Context } from "hono";
 import { CreateUserDto, UpdateUserDto } from "../dtos/user.dto";
 import { UserRepository } from "../repositories/user.repository";
 import { CaseTransformer } from "@/shared/utils/case-transformer";
+import { userResource } from "../transformers/user.resource";
+import { userCollection } from "../transformers/user.collection";
 
 export class UserService {
   constructor(private userRepository: UserRepository) {}
@@ -11,7 +13,13 @@ export class UserService {
   async getUsers(c: Context) {
     try {
       const { page, limit } = c.req.valid("query");
-      const { users, total } = await this.userRepository.findAll(page, limit);
+      const { users, total } = await this.userRepository.findAll(
+        {
+          page,
+          limit,
+        },
+        userCollection.transformCollection
+      );
       return ResponseHelper.paginated(c, users, page, limit, total);
     } catch (error) {
       return ResponseHelper.error(c, "Failed to fetch users", 500);
@@ -21,7 +29,10 @@ export class UserService {
   async getUserById(c: Context) {
     try {
       const { id } = c.req.valid("param");
-      const user = await this.userRepository.findById(id);
+      const user = await this.userRepository.findById(
+        id,
+        userResource.transform
+      );
 
       if (!user) {
         return ResponseHelper.error(c, "User not found", 404);
@@ -44,17 +55,9 @@ export class UserService {
         return ResponseHelper.error(ctx, "Email already exists", 400);
       }
 
-      console.log("======================");
-      console.log("======================");
-      console.log("======================");
-      console.log("======================");
-      console.log(
-        "🚀 ~ UserService ~ createUser ~ data:",
-        CaseTransformer.camelToSnake(data)
-      );
-
       const user = await this.userRepository.create(
-        CaseTransformer.camelToSnake(data)
+        CaseTransformer.camelToSnake(data),
+        userResource.transform
       );
       return ResponseHelper.success(
         ctx,
@@ -82,7 +85,8 @@ export class UserService {
 
       const user = await this.userRepository.update(
         id,
-        CaseTransformer.camelToSnake(data)
+        CaseTransformer.camelToSnake(data),
+        userResource.transform
       );
 
       if (!user) {

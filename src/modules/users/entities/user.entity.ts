@@ -1,4 +1,4 @@
-import { BaseEntity } from "@/types";
+import { BaseEntity } from "@/base/base.entity";
 
 export interface User extends BaseEntity {
   data: {
@@ -6,4 +6,15 @@ export interface User extends BaseEntity {
     email: string;
     avatar?: string;
   };
+}
+
+export interface IUser {
+  id?: string;
+  data: {
+    name?: string;
+    email?: string;
+    avatar?: string;
+  };
+  createdAt?: Date;
+  updatedAt?: Date;
 }

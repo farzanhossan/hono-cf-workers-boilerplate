@@ -1,10 +1,10 @@
 // src/modules/users/repositories/user.repository.ts
-import { Injectable } from "@/shared/decorators/injectable";
-import { User } from "../entities/user.entity";
+import { DatabaseConnection } from "@/shared/database/database";
 import { createDatabaseConnection } from "@/shared/database/factory";
+import { Injectable } from "@/shared/decorators/injectable";
 import { Env } from "@/types";
 import { CreateUserDto, UpdateUserDto } from "../dtos/user.dto";
-import { DatabaseConnection } from "@/shared/database/database";
+import { IUser, User } from "../entities/user.entity";
 
 @Injectable()
 export class UserRepository {
@@ -16,9 +16,11 @@ export class UserRepository {
   }
 
   async findAll(
-    page: number = 1,
-    limit: number = 10
-  ): Promise<{ users: User[]; total: number }> {
+    options: { page?: number; limit?: number },
+    transformCollection: (data: User[]) => IUser[]
+  ): Promise<{ users: IUser[]; total: number }> {
+    const { page = 1, limit = 10 } = options;
+
     // Get total count
     const countResult = await this.db.queryOne<{ count: number }>(
       `SELECT COUNT(*) as count FROM ${this.tableName}`
@@ -35,16 +37,21 @@ export class UserRepository {
       [limit, offset]
     );
 
-    return { users, total };
+    return { users: transformCollection(users), total };
   }
 
-  async findById(id: string): Promise<User | null> {
-    return await this.db.queryOne<User>(
+  async findById(
+    id: string,
+    transformer: (data: User) => IUser
+  ): Promise<IUser | null> {
+    const user = await this.db.queryOne<User>(
       `SELECT * 
        FROM ${this.tableName} 
        WHERE id = $1`,
       [id]
     );
+
+    return user ? transformer(user) : null;
   }
 
   async findByEmail(email: string): Promise<User | null> {
@@ -56,7 +63,10 @@ export class UserRepository {
     );
   }
 
-  async create(userData: CreateUserDto): Promise<User> {
+  async create(
+    userData: CreateUserDto,
+    transformer: (data: User) => IUser
+  ): Promise<IUser> {
     const user = await this.db.queryOne<User>(
       `INSERT INTO ${this.tableName} (data) 
        VALUES ($1) 
@@ -69,12 +79,16 @@ export class UserRepository {
       throw new Error("Failed to create user");
     }
 
-    return user;
+    return transformer(user);
   }
 
-  async update(id: string, userData: UpdateUserDto): Promise<User | null> {
+  async update(
+    id: string,
+    userData: UpdateUserDto,
+    transform: (data: User) => IUser
+  ): Promise<IUser | null> {
     // Get current user data
-    const currentUser = await this.findById(id);
+    const currentUser = await this.findById(id, transform);
     if (!currentUser) {
       return null;
     }
@@ -85,13 +99,15 @@ export class UserRepository {
       ...userData,
     };
 
-    return await this.db.queryOne<User>(
+    const updatedUser: any = await this.db.queryOne<User>(
       `UPDATE ${this.tableName} 
        SET data = $1
        WHERE id = $2 
        RETURNING *`,
       [updatedData, id]
     );
+
+    return updatedUser ? transform(updatedUser) : null;
   }
 
   async delete(id: string): Promise<boolean> {
