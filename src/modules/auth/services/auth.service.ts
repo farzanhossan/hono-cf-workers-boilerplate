@@ -3,6 +3,7 @@
 import { UserRepository } from "@/modules/users/repositories/user.repository";
 import { userResource } from "@/modules/users/transformers/user.resource";
 import { ResponseHelper } from "@/shared/utils/response";
+import { ERROR_EXCEPTIONS } from "@/types";
 import { Context } from "hono";
 
 export class AuthService {
@@ -18,7 +19,11 @@ export class AuthService {
       );
 
       if (!user) {
-        return ResponseHelper.error(c, "User not found", 404);
+        return ResponseHelper.error(
+          c,
+          "User not found",
+          ERROR_EXCEPTIONS.NOT_FOUND
+        );
       }
 
       // const isValid = await this.passwordService.compare(
@@ -32,7 +37,11 @@ export class AuthService {
       // const token = this.tokenService.sign({ id: user.id });
       return ResponseHelper.success(c, { token: "token" });
     } catch (error) {
-      return ResponseHelper.error(c, "Failed to login", 500);
+      return ResponseHelper.error(
+        c,
+        "Failed to login",
+        ERROR_EXCEPTIONS.INTERNAL_SERVER_ERROR
+      );
     }
   }
 }
