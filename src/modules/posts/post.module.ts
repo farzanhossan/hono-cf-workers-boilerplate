@@ -7,8 +7,10 @@ import { PostService } from "./services/post.service";
 export class PostModule {
   static register(env: Env) {
     // Create instances manually with proper env injection
-    const postRepository = new PostRepository(env);
-    const postService = new PostService(postRepository);
+    const postRepository =
+      container.instances.get("PostRepository") || new PostRepository(env);
+    const postService =
+      container.instances.get("PostService") || new PostService(postRepository);
 
     // Register the instances in the container
     container.instances.set("PostRepository", postRepository);

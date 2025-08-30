@@ -6,11 +6,13 @@ import { UserModule } from "@/modules/users/user.module";
 import { Env } from "@/types";
 import { DatabaseMigrator } from "@/database/migrator";
 import { PostModule } from "./modules/posts/post.module";
+import { AuthModule } from "./modules/auth/auth.module";
 
 export function createApp(env: Env) {
   const app = new Hono();
 
   // Register modules
+  AuthModule.register(env);
   UserModule.register(env);
   PostModule.register(env);
 
@@ -31,6 +33,7 @@ export function createApp(env: Env) {
   });
 
   // API routes
+  app.route("/api/v1/auth", AuthModule.getRoutes());
   app.route("/api/v1/users", UserModule.getRoutes());
   app.route("/api/v1/posts", PostModule.getRoutes());
 

@@ -8,8 +8,10 @@ import { Env } from "@/types";
 export class UserModule {
   static register(env: Env) {
     // Create instances manually with proper env injection
-    const userRepository = new UserRepository(env);
-    const userService = new UserService(userRepository);
+    const userRepository =
+      container.instances.get("UserRepository") || new UserRepository(env);
+    const userService =
+      container.instances.get("UserService") || new UserService(userRepository);
 
     // Register the instances in the container
     container.instances.set("UserRepository", userRepository);

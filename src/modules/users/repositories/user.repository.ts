@@ -15,6 +15,31 @@ export class UserRepository {
     this.db = createDatabaseConnection(env);
   }
 
+  async queryOneWithTransform(
+    query: string,
+    params: any[]
+  ): Promise<IUser | null> {
+    return await this.db.queryOne(query, params);
+  }
+
+  async findOneWithQuery(
+    query: string,
+    params: any[],
+    transform: (data: User) => IUser
+  ): Promise<IUser | null> {
+    const user = await this.db.queryOne<User>(query, params);
+    return user ? transform(user) : null;
+  }
+
+  async findAllWithQuery(
+    query: string,
+    params: any[],
+    transformCollection: (data: User[]) => IUser[]
+  ): Promise<IUser[] | null> {
+    const users = await this.db.query<User>(query, params);
+    return users ? transformCollection(users) : null;
+  }
+
   async findAll(
     options: { page?: number; limit?: number },
     transformCollection: (data: User[]) => IUser[]
