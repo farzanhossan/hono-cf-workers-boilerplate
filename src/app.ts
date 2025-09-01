@@ -1,15 +1,19 @@
-import { Hono } from "hono";
+import { Context, Hono } from "hono";
 import { corsMiddleware } from "@/shared/middleware/cors";
 import { loggerMiddleware } from "@/shared/middleware/logger";
 import { errorHandler } from "@/shared/middleware/error";
 import { UserModule } from "@/modules/users/user.module";
 import { Env } from "@/types";
 import { DatabaseMigrator } from "@/database/migrator";
-import { PostModule } from "./modules/posts/post.module";
 import { AuthModule } from "./modules/auth/auth.module";
+import { ExceptionFilter } from "./shared/middleware/error-handler";
+import { PostModule } from "./modules/posts/post.module";
+import { requestIdMiddleware } from "./shared/middleware/request-id";
 
 export function createApp(env: Env) {
   const app = new Hono();
+
+  const exceptionFilter = new ExceptionFilter();
 
   // Register modules
   AuthModule.register(env);
@@ -19,6 +23,7 @@ export function createApp(env: Env) {
   // Global middleware
   app.use("*", corsMiddleware);
   app.use("*", loggerMiddleware);
+  app.use("*", requestIdMiddleware);
 
   // Remove the automatic migration code
 
@@ -72,7 +77,8 @@ export function createApp(env: Env) {
   });
 
   // Error handler
-  app.onError(errorHandler);
-
+  app.onError((error: Error, c: Context) => {
+    return exceptionFilter.catch(error, c);
+  });
   return app;
 }

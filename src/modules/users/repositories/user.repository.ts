@@ -79,13 +79,17 @@ export class UserRepository {
     return user ? transformer(user) : null;
   }
 
-  async findByEmail(email: string): Promise<User | null> {
-    return await this.db.queryOne<User>(
+  async findByEmail(
+    email: string,
+    transformer: (data: User) => IUser
+  ): Promise<IUser | null> {
+    const user = await this.db.queryOne<User>(
       `SELECT *
        FROM ${this.tableName} 
        WHERE data->>'email' = $1`,
       [email]
     );
+    return user ? transformer(user) : null;
   }
 
   async create(
