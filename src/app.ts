@@ -9,6 +9,7 @@ import { AuthModule } from "./modules/auth/auth.module";
 import { ExceptionFilter } from "./shared/middleware/error-handler";
 import { PostModule } from "./modules/posts/post.module";
 import { requestIdMiddleware } from "./shared/middleware/request-id";
+import { ResponseHandler } from "./shared/middleware/response-handler";
 
 export function createApp(env: Env) {
   const app = new Hono();
@@ -24,6 +25,7 @@ export function createApp(env: Env) {
   app.use("*", corsMiddleware);
   app.use("*", loggerMiddleware);
   app.use("*", requestIdMiddleware);
+  app.use("*", ResponseHandler.middleware());
 
   // Remove the automatic migration code
 

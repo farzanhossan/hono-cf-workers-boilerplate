@@ -1,41 +1,43 @@
-import { ApiResponse, PaginatedResponse } from "@/types";
 import { Context } from "hono";
+import { SuccessResponse } from "./success-response";
+import { ResponseMeta } from "@/types";
 
 export class ResponseHelper {
-  static success<T>(c: Context, data: T, message?: string, status = 200) {
-    const response: ApiResponse<T> = {
-      success: true,
-      data,
-      message,
-    };
-    return c.json(response, status);
+  // Success responses
+  static success<T>(
+    c: Context,
+    data: T,
+    message: string = "Success"
+  ): Response {
+    const requestId = c.get("requestId");
+    const response = SuccessResponse.ok(message, data, requestId);
+    return c.json(response.toJSON());
   }
 
-  static error(c: Context, error: string, status = 400) {
-    const response: ApiResponse = {
-      success: false,
-      error,
-    };
-    return c.json(response, status);
+  static created<T>(
+    c: Context,
+    data: T,
+    message: string = "Created successfully"
+  ): Response {
+    const requestId = c.get("requestId");
+    const response = SuccessResponse.created(message, data, requestId);
+    return c.json(response.toJSON(), 201);
   }
 
   static paginated<T>(
     c: Context,
-    data: T[],
-    page: number,
-    limit: number,
-    total: number
-  ) {
-    const response: PaginatedResponse<T> = {
-      success: true,
-      data,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
-    return c.json(response, 200);
+    data: T,
+    meta: ResponseMeta,
+    message: string = "Data retrieved successfully"
+  ): Response {
+    const requestId = c.get("requestId");
+    const response = SuccessResponse.paginated(message, data, meta, requestId);
+    return c.json(response.toJSON());
+  }
+
+  static empty(c: Context, message: string = "No content"): Response {
+    const requestId = c.get("requestId");
+    const response = SuccessResponse.ok(message, null, requestId);
+    return c.json(response.toJSON());
   }
 }

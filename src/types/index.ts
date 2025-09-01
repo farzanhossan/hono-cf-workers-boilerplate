@@ -43,15 +43,15 @@ export const ERROR_EXCEPTIONS: Record<string, number> = {
   SERVICE_UNAVAILABLE: 503,
 };
 
-export interface ErrorResponse {
-  success: false;
-  statusCode: number;
-  message: string;
-  errorMessages: string[];
-  timestamp: string;
-  path: string;
-  requestId?: string;
-}
+// export interface ErrorResponse {
+//   success: false;
+//   statusCode: number;
+//   message: string;
+//   errorMessages: string[];
+//   timestamp: string;
+//   path: string;
+//   requestId?: string;
+// }
 
 export interface SuccessResponse<T = any> {
   success: true;
@@ -59,4 +59,33 @@ export interface SuccessResponse<T = any> {
   message?: string;
   timestamp: string;
   requestId?: string;
+}
+
+export interface ResponseMeta {
+  total?: number;
+  limit?: number;
+  page?: number;
+  skip?: number;
+  hasNextPage?: boolean;
+  hasPreviousPage?: boolean;
+}
+
+export interface BaseResponse {
+  success: boolean;
+  statusCode: number;
+  message: string;
+  timestamp: string;
+  requestId?: string;
+  path?: string;
+}
+
+export interface ErrorResponse extends BaseResponse {
+  success: false;
+  errorMessages: string[];
+}
+
+export interface SuccessResponseInterface<T = any> extends BaseResponse {
+  success: true;
+  data: T;
+  meta?: ResponseMeta;
 }
