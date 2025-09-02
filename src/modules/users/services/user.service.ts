@@ -6,6 +6,10 @@ import { UserRepository } from "../repositories/user.repository";
 import { CaseTransformer } from "@/shared/utils/case-transformer";
 import { userResource } from "../transformers/user.resource";
 import { userCollection } from "../transformers/user.collection";
+import {
+  ConflictException,
+  NotFoundException,
+} from "@/shared/utils/exceptions";
 
 export class UserService {
   constructor(private userRepository: UserRepository) {}
@@ -20,9 +24,9 @@ export class UserService {
         },
         userCollection.transformCollection
       );
-      return ResponseHelper.paginated(c, users, page, limit, total);
+      return ResponseHelper.paginated(c, users, { page, limit, total });
     } catch (error) {
-      return ResponseHelper.error(c, "Failed to fetch users", 500);
+      throw error;
     }
   }
 
@@ -40,33 +44,31 @@ export class UserService {
 
       return ResponseHelper.success(c, user);
     } catch (error) {
-      return ResponseHelper.error(c, "Failed to fetch user", 500);
+      throw error;
     }
   }
 
   async createUser(ctx: Context) {
     try {
-      const data: CreateUserDto = ctx.req.valid("json");
+      const data: any = ctx.req.json();
 
       // Business logic - check for existing email
-      const existingUser = await this.userRepository.findByEmail(data.email);
+      const existingUser = await this.userRepository.findByEmail(
+        data.email,
+        userResource.transform
+      );
 
       if (existingUser) {
-        return ResponseHelper.error(ctx, "Email already exists", 400);
+        throw new ConflictException("Email already exists");
       }
 
       const user = await this.userRepository.create(
         CaseTransformer.camelToSnake(data),
         userResource.transform
       );
-      return ResponseHelper.success(
-        ctx,
-        user,
-        "User created successfully",
-        201
-      );
+      return ResponseHelper.created(ctx, user, "User created successfully");
     } catch (error) {
-      return ResponseHelper.error(ctx, "Failed to create user", 500);
+      throw error;
     }
   }
 
@@ -77,9 +79,12 @@ export class UserService {
 
       // Business logic - check for email conflicts
       if (data.email) {
-        const existingUser = await this.userRepository.findByEmail(data.email);
+        const existingUser = await this.userRepository.findByEmail(
+          data.email,
+          userResource.transform
+        );
         if (existingUser && existingUser.id !== id) {
-          return ResponseHelper.error(c, "Email already exists", 400);
+          throw new ConflictException("Email already exists");
         }
       }
 
@@ -90,12 +95,12 @@ export class UserService {
       );
 
       if (!user) {
-        return ResponseHelper.error(c, "User not found", 404);
+        throw new NotFoundException("User not found");
       }
 
       return ResponseHelper.success(c, user, "User updated successfully");
     } catch (error) {
-      return ResponseHelper.error(c, "Failed to update user", 500);
+      throw error;
     }
   }
 
@@ -104,15 +109,18 @@ export class UserService {
       const { id } = c.req.valid("param");
 
       // Business logic - check if user exists
-      const user = await this.userRepository.findById(id);
+      const user = await this.userRepository.findById(
+        id,
+        userResource.transform
+      );
       if (!user) {
-        return ResponseHelper.error(c, "User not found", 404);
+        throw new NotFoundException("User not found");
       }
 
       const success = await this.userRepository.delete(id);
       return ResponseHelper.success(c, null, "User deleted successfully");
     } catch (error) {
-      return ResponseHelper.error(c, "Failed to delete user", 500);
+      throw error;
     }
   }
 }
