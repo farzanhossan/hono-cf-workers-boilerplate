@@ -7,9 +7,11 @@
     ],
     "vars": {
         "ENVIRONMENT": "development",
-        "DATABASE_TYPE": "hyperdrive"
+        "DATABASE_TYPE": "hyperdrive",
         // "SUPABASE_URL": "https://zmlnqmzdjpiyxytnlqji.supabase.co",
         // "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptbG5xbXpkanBpeXh5dG5scWppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4NDc5MzUsImV4cCI6MjA3MDQyMzkzNX0.SiBIGwJ0Khe_a-fpemSBKf2BVhbVH-83aG_trxo806Y"
+        "JWT_SECRET": "secret",
+        "JWT_EXPIRES_IN": "1h"
     },
     "hyperdrive": [
         {

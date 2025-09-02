@@ -5,6 +5,9 @@ export interface Env {
   SUPABASE_URL?: string;
   SUPABASE_ANON_KEY?: string;
   HYPERDRIVE?: Hyperdrive;
+
+  JWT_SECRET?: string;
+  JWT_EXPIRES_IN?: string;
 }
 
 export interface Context {

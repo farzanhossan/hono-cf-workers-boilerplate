@@ -9,6 +9,7 @@ class UserResource implements Transformer {
         name: entity.data?.name,
         email: entity.data?.email,
         avatar: entity.data?.avatar,
+        password: entity.data?.password,
       },
       createdAt: entity.created_at,
       updatedAt: entity?.updated_at,

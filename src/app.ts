@@ -10,6 +10,7 @@ import { ExceptionFilter } from "./shared/middleware/error-handler";
 import { PostModule } from "./modules/posts/post.module";
 import { requestIdMiddleware } from "./shared/middleware/request-id";
 import { ResponseHandler } from "./shared/middleware/response-handler";
+import { HelpersModule } from "./helpers/helpers.module";
 
 export function createApp(env: Env) {
   const app = new Hono();
@@ -17,6 +18,7 @@ export function createApp(env: Env) {
   const exceptionFilter = new ExceptionFilter();
 
   // Register modules
+  HelpersModule.register(env);
   AuthModule.register(env);
   UserModule.register(env);
   PostModule.register(env);

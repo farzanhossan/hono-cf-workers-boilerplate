@@ -14,6 +14,7 @@ export class ExceptionFilter {
   catch(exception: any, c: Context): Response {
     const requestId = c.get("requestId");
     this.logger.error(exception, requestId);
+    console.log("🚀 ~ ExceptionFilter ~ catch ~ exception:", exception);
 
     let statusCode: number;
     let errorMessages: string[] = [exception?.message || "Unknown error"];
