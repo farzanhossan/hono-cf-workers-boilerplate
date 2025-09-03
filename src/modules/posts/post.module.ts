@@ -1,3 +1,4 @@
+// src/modules/posts/post.module.ts
 import { container } from "@/shared/container/container";
 import { Env } from "@/types";
 import { PostController } from "./controllers/post.controller"; // Function, not class

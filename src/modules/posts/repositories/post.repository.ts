@@ -15,6 +15,31 @@ export class PostRepository {
     this.db = createDatabaseConnection(env);
   }
 
+  async queryOneWithTransform(
+    query: string,
+    params: any[]
+  ): Promise<IPost | null> {
+    return await this.db.queryOne(query, params);
+  }
+
+  async findOneWithQuery(
+    query: string,
+    params: any[],
+    transform: (data: Post) => IPost
+  ): Promise<IPost | null> {
+    const post = await this.db.queryOne<Post>(query, params);
+    return post ? transform(post) : null;
+  }
+
+  async findAllWithQuery(
+    query: string,
+    params: any[],
+    transformCollection: (data: Post[]) => IPost[]
+  ): Promise<IPost[] | null> {
+    const posts = await this.db.query<Post>(query, params);
+    return posts ? transformCollection(posts) : null;
+  }
+
   async findAll(
     options: { page?: number; limit?: number },
     transformCollection: (data: Post[]) => IPost[]
@@ -30,11 +55,21 @@ export class PostRepository {
     // Get paginated data
     const offset = (page - 1) * limit;
     const posts = await this.db.query<Post>(
-      `SELECT * 
-       FROM ${this.tableName} 
-       ORDER BY created_at DESC 
+      `SELECT 
+       p.*,
+       json_build_object(
+          'id', u.id,
+          'data', u.data
+        ) as user
+       FROM ${this.tableName} p
+       LEFT JOIN users u ON p.user_id = u.id
+       ORDER BY p.created_at DESC 
        LIMIT $1 OFFSET $2`,
       [limit, offset]
+    );
+    console.log(
+      "🚀 ~ PostRepository ~ findAll ~ posts:",
+      JSON.stringify(posts, null, 2)
     );
 
     return { posts: transformCollection(posts), total };
@@ -54,13 +89,17 @@ export class PostRepository {
     return post ? transformer(post) : null;
   }
 
-  async findByEmail(email: string): Promise<Post | null> {
-    return await this.db.queryOne<Post>(
+  async findByEmail(
+    email: string,
+    transformer: (data: Post) => IPost
+  ): Promise<IPost | null> {
+    const post = await this.db.queryOne<Post>(
       `SELECT *
        FROM ${this.tableName} 
        WHERE data->>'email' = $1`,
       [email]
     );
+    return post ? transformer(post) : null;
   }
 
   async create(

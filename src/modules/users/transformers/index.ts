@@ -1,2 +1,2 @@
-export * from './notification.collection'
-export * from './notification.resource'
+export * from "./user.collection";
+export * from "./user.resource";

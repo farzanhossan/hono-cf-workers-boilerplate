@@ -1,18 +1,24 @@
 // src/modules/posts/services/post.service.ts
+import { CaseTransformer } from "@/shared/utils/case-transformer";
+import {
+  ConflictException,
+  NotFoundException,
+} from "@/shared/utils/exceptions";
 import { ResponseHelper } from "@/shared/utils/response";
 import { Context } from "hono";
-import { CreatePostDto, UpdatePostDto } from "../dtos/post.dto";
+import { UpdatePostDto } from "../dtos/post.dto";
 import { PostRepository } from "../repositories/post.repository";
-import { CaseTransformer } from "@/shared/utils/case-transformer";
-import { postResource } from "../transformers/post.resource";
 import { postCollection } from "../transformers/post.collection";
+import { postResource } from "../transformers/post.resource";
 
 export class PostService {
   constructor(private postRepository: PostRepository) {}
 
   async getPosts(c: Context) {
     try {
-      const { page, limit } = c.req.valid("query");
+      const query = c.req.query();
+      const page = query.page ? parseInt(query.page) : 1;
+      const limit = query.limit ? parseInt(query.limit) : 10;
       const { posts, total } = await this.postRepository.findAll(
         {
           page,
@@ -20,68 +26,48 @@ export class PostService {
         },
         postCollection.transformCollection
       );
-      return ResponseHelper.paginated(c, posts, page, limit, total);
+      return ResponseHelper.paginated(c, posts, { page, limit, total });
     } catch (error) {
-      return ResponseHelper.error(c, "Failed to fetch posts", 500);
+      throw error;
     }
   }
 
   async getPostById(c: Context) {
     try {
-      const { id } = c.req.valid("param");
+      const { id } = c.req.param();
       const post = await this.postRepository.findById(
         id,
         postResource.transform
       );
 
       if (!post) {
-        return ResponseHelper.error(c, "Post not found", 404);
+        throw new NotFoundException("Post not found");
       }
 
       return ResponseHelper.success(c, post);
     } catch (error) {
-      return ResponseHelper.error(c, "Failed to fetch post", 500);
+      throw error;
     }
   }
 
   async createPost(ctx: Context) {
     try {
-      const data: CreatePostDto = ctx.req.valid("json");
-
-      // Business logic - check for existing email
-      const existingPost = await this.postRepository.findByEmail(data.email);
-
-      if (existingPost) {
-        return ResponseHelper.error(ctx, "Email already exists", 400);
-      }
+      const data: any = ctx.req.json();
 
       const post = await this.postRepository.create(
         CaseTransformer.camelToSnake(data),
         postResource.transform
       );
-      return ResponseHelper.success(
-        ctx,
-        post,
-        "Post created successfully",
-        201
-      );
+      return ResponseHelper.created(ctx, post, "Post created successfully");
     } catch (error) {
-      return ResponseHelper.error(ctx, "Failed to create post", 500);
+      throw error;
     }
   }
 
   async updatePost(c: Context) {
     try {
-      const { id } = c.req.valid("param");
-      const data: UpdatePostDto = c.req.valid("json");
-
-      // Business logic - check for email conflicts
-      if (data.email) {
-        const existingPost = await this.postRepository.findByEmail(data.email);
-        if (existingPost && existingPost.id !== id) {
-          return ResponseHelper.error(c, "Email already exists", 400);
-        }
-      }
+      const { id } = c.req.param();
+      const data: UpdatePostDto = c.req.json() as UpdatePostDto;
 
       const post = await this.postRepository.update(
         id,
@@ -90,29 +76,32 @@ export class PostService {
       );
 
       if (!post) {
-        return ResponseHelper.error(c, "Post not found", 404);
+        throw new NotFoundException("Post not found");
       }
 
       return ResponseHelper.success(c, post, "Post updated successfully");
     } catch (error) {
-      return ResponseHelper.error(c, "Failed to update post", 500);
+      throw error;
     }
   }
 
   async deletePost(c: Context) {
     try {
-      const { id } = c.req.valid("param");
+      const { id } = c.req.param();
 
       // Business logic - check if post exists
-      const post = await this.postRepository.findById(id);
+      const post = await this.postRepository.findById(
+        id,
+        postResource.transform
+      );
       if (!post) {
-        return ResponseHelper.error(c, "Post not found", 404);
+        throw new NotFoundException("Post not found");
       }
 
       const success = await this.postRepository.delete(id);
       return ResponseHelper.success(c, null, "Post deleted successfully");
     } catch (error) {
-      return ResponseHelper.error(c, "Failed to delete post", 500);
+      throw error;
     }
   }
 }
